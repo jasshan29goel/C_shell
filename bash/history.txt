@@ -1,0 +1,20 @@
+clear
+clear
+pwd kf
+fire
+echo asjf
+ehco alsdfj
+ls sfn
+cd skf
+clear
+clera
+./a.out &
+gcc sleep.c
+ls
+cd assignment3
+ls
+clear
+pinfo 1
+clear
+pinfo 6969
+sleep 10

@@ -1,0 +1,37 @@
+This project runs a shell (mimicking Bash) written in C.
+
+The files have been named according to their functions.
+
+To compile the code, type in "make" in the command line.
+To run the program, type in "./shell" in the command line.
+
+An intereface similar to Bash will appear on the screen.
+
+
+
+
+shell.c
+	main code which actually runs the terminal
+
+changeDirectory.h 
+	it if the file for implementation of cd	 
+getPWD.h       
+	if is the file for implementation of pwd
+history.h    
+	if is the file for implementation of history
+makefile  
+	if is the file for compiling the code
+getFileInfo.h      
+	if is the file for getting info of the file when running ls -l
+getUserName.h  
+	if is the file for getting username
+history.txt  
+	if is the file for storing of history command
+pinfo.h
+	if is the file for implementation of pinfo command
+getHostName.h      
+	if is the file for implementation for getting hostname
+headers.h      
+	if contains all the headers
+ls.h         
+	if is the file for implementation of ls
