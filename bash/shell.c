@@ -2,6 +2,8 @@
 
 char command[100][100];
 char netCommand[100][100];
+char pipeCommand[100][100][100];
+int  pipeNum[100];
 char tilda[100];
 
 int parseCommand(int netNum)
@@ -49,7 +51,7 @@ int tokenizeCommand()
 	if(number_of_lines(tilda)>20)
 	{
 		remove_last_line(tilda);
-	}
+	}	
 
 	char* token = strtok(str1, ";"); 
 	int i=0;
@@ -166,6 +168,218 @@ int execute_command(int num)
 	}
 	return 0;
 }
+
+int parsePipes(char *token,int netNum)
+{
+	char str1[256];
+	int i=0,j=0,ctr=0,flag=1,quote=0;
+
+	strcpy(str1,token);
+	int len=strlen(str1);
+	    // printf("-----------%s----------\n",str1 );
+
+	for(i=0;i<len;i++)
+	{
+		if((str1[i]==' '||str1[i]=='\n'||str1[i]=='\t')&&flag==1&&quote==0)
+		{
+
+		}
+		else if((str1[i]==' '||str1[i]=='\n'||str1[i]=='\t')&&flag==0&&quote==0)
+		{
+			pipeCommand[netNum][ctr++][j]='\0';
+			flag=1;
+			j=0;
+		}
+		else if(str1[i]=='\"')
+		{
+			quote=1-quote;  
+		}
+		else
+		{
+			pipeCommand[netNum][ctr][j++]=str1[i];
+			flag=0;
+		}
+	}
+	if(flag==0) 
+	{
+		pipeCommand[netNum][ctr++][j]='\0';
+	}
+	return ctr;
+}
+int countPipes(int num)
+{
+	int k=strlen(netCommand[num]);
+	int count=0;
+	for (int i = 0; i < k; ++i)
+	{
+		if(netCommand[num][i]=='|')
+		{
+			count++;
+		}
+	}
+	return count;
+}
+int tokenizePipes(int num)
+{
+	char str1[256];
+	strcpy(str1,netCommand[num]);
+
+	char* token = strtok(str1, "|"); 
+	int i=0;
+	while (token != NULL) 
+	{
+		pipeNum[i]=parsePipes(token,i);
+		token = strtok(NULL, "|");
+		i++; 
+
+	}
+	return i;
+}
+
+void pipeRedirection(int i)
+{
+	char *args[20];
+	int j;
+	int flag=0;
+	for (j = 0; j < pipeNum[i]; ++j)
+	{
+		if(strcmp(pipeCommand[i][j],">")==0||strcmp(pipeCommand[i][j],"<")==0||strcmp(pipeCommand[i][j],">>")==0)
+		{
+			flag=1;
+			break;
+		}
+		args[j]=pipeCommand[i][j];
+	} 
+	args[j]=NULL;
+	if(flag!=0)
+	{
+		for (int k = 0; k < pipeNum[i]; ++k)
+		{
+			if(strcmp(pipeCommand[i][k],">")==0)
+			{
+				int out = open(pipeCommand[i][k+1],O_WRONLY|O_CREAT,0666); 
+				dup2(out,STDOUT_FILENO);
+				close(out);	
+			}
+			if(strcmp(pipeCommand[i][k],"<")==0)
+			{
+				int in = open(pipeCommand[i][k+1],O_RDONLY);
+				dup2(in,STDIN_FILENO);
+				close(in);
+			}
+		}
+	}
+	if(execvp(args[0],args)==-1)
+	{
+		exit(127);
+	}
+
+}
+void executePipe(int num_pipes)
+{
+
+	int fildes[100];
+
+
+	for (int i = 0; i < num_pipes; ++i)
+	{
+		if(pipe(fildes+2*i) != 0)
+		{
+			perror("pipe failed");
+		}
+
+	}
+	for (int i = 0; i < num_pipes+1; ++i)
+	{
+
+		int pid;
+		pid=fork();
+		if(pid<0)
+		{
+		// error
+		}
+		else if(pid==0)
+		{
+			if(i!=0)
+			{
+				dup2(fildes[2*i-2],0);
+			}
+			if(i!=num_pipes)
+			{
+				dup2(fildes[2*i+1],1);
+			}
+
+			for (int j = 0; j < 2*num_pipes; ++j)
+			{
+				close(fildes[j]);
+			}
+			pipeRedirection(i);
+		}
+	}
+	for (int i = 0; i < 2*num_pipes; ++i)
+	{
+		close(fildes[i]);
+	}
+	
+	int status;
+	for(int i = 0; i < num_pipes+1; i++)
+	{ 
+		wait(&status);
+	}
+}
+int checkIfRedirection(int num)
+{
+	int j;
+	int flag=0;
+	for (j = 0; j <num; ++j)
+	{
+		if(strcmp(command[j],">")==0||strcmp(command[j],"<")==0||strcmp(command[j],">>")==0)
+		{
+			flag=1;
+			break;
+		}
+	}
+	return flag; 
+}
+
+void executeChildWithRedirection(int num)
+{
+	char *args[20];
+	int j;
+	int flag=0;
+	for (j = 0; j <num; ++j)
+	{
+		if(strcmp(command[j],">")==0||strcmp(command[j],"<")==0||strcmp(command[j],">>")==0)
+		{
+			flag=1;
+			break;
+		}
+		args[j]=command[j];
+	} 
+	args[j]=NULL;
+	if(flag!=0)
+	{
+		for (int k = 0; k < num; ++k)
+		{
+			if(strcmp(command[k],">")==0)
+			{
+				int out = open(command[k+1],O_WRONLY|O_CREAT,0666); 
+				dup2(out,STDOUT_FILENO);
+				close(out);	
+			}
+			if(strcmp(command[k],"<")==0)
+			{
+				int in = open(command[k+1],O_RDONLY);
+				dup2(in,STDIN_FILENO);
+				close(in);
+			}
+		}
+	}
+	if(execvp(args[0],args)==-1)
+	{
+		exit(127);
+	}
+}
 void foreground_process_execute(int num)
 {
 	int pid;
@@ -176,16 +390,7 @@ void foreground_process_execute(int num)
 	}
 	else if(pid==0)
 	{
-		char *args[20];
-		for (int i = 0; i < num; ++i)
-		{
-			args[i]=command[i];
-		} 
-		args[num]=NULL;
-		if(execvp(args[0],args)==-1)
-		{
-			exit(127);
-		}
+		executeChildWithRedirection(num);	
 	}
 	else
 	{
@@ -217,7 +422,7 @@ void foreground_process_execute(int num)
 	}
 
 }
-	
+
 void background_process_execute(int num)
 {
 	int pid=fork();
@@ -245,16 +450,7 @@ void background_process_execute(int num)
 		}
 		else if(pid1==0)
 		{
-			char *args[20];
-			for (int i = 0; i < num; ++i)
-			{
-				args[i]=command[i];	
-			} 
-			args[num]=NULL;
-			if(execvp(args[0],args)==-1)
-			{
-				exit(127);
-			}
+			executeChildWithRedirection(num);			
 		}
 		else
 		{
@@ -295,8 +491,6 @@ void background_process_execute(int num)
 
 }
 
-
-
 int main() 
 { 
 	strcpy(tilda,getPresentWorkingDirectory());
@@ -308,16 +502,36 @@ int main()
 		int netNum=tokenizeCommand();
 		for (int i = 0; i < netNum; ++i)
 		{
-			int num=parseCommand(i);
-			if(num==0||execute_command(num)) continue;
-
-			if(strcmp(command[num-1],"&")==0)
+			if(countPipes(i)==0)
 			{
-				background_process_execute(num-1);	
+				int num=parseCommand(i);
+				int flag=checkIfRedirection(num);
+				if(flag==0&&(num==0||execute_command(num))) continue;
+
+				if(strcmp(command[num-1],"&")==0)
+				{
+					background_process_execute(num-1);	
+				}
+				else
+				{
+					foreground_process_execute(num);
+				}
 			}
 			else
 			{
-				foreground_process_execute(num);
+				tokenizePipes(i);
+				executePipe(countPipes(i));
+				// for (int i = 0; i <=k; ++i)
+				// {
+				// 	for (int j = 0; j < pipeNum[i]; ++j)
+				// 	{
+				// 		printf("%s ",pipeCommand[i][j] );
+				// 	}
+				// 	printf("\n");
+				// }
+				// tokenize pipes    pipeCommand[i][j] every pipe store ho jaaegi
+				//                   count pipies muhe total commands de dengi
+
 			}
 		}
 
