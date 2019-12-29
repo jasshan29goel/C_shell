@@ -5,6 +5,16 @@ char pipeCommand[100][100][100];
 int  pipeNum[100];
 char tilda[100];
 
+struct typeProc
+{
+	char name[100];
+	int pid;
+	int mark;
+};
+
+struct typeProc backProc[100];
+int numBackProc;
+
 void printCommand(int num) // supply countpipes(i)
 {
 	for (int i = 0; i <=num; ++i)
@@ -15,6 +25,24 @@ void printCommand(int num) // supply countpipes(i)
 			printf("%s ",pipeCommand[i][j] );
 		}
 	}
+}
+void storeCommand(int num,int pid) // supply countpipes(i)
+{
+	char BUFFER[100];
+	for (int i = 0; i <=num; ++i)
+	{
+		if(i!=0) strcat(BUFFER,"| ");
+		for (int j = 0; j < pipeNum[i]; ++j)
+		{
+			strcat(BUFFER,pipeCommand[i][j]);
+			strcat(BUFFER," ");
+		}
+	}
+	strcpy(backProc[numBackProc].name,BUFFER);
+	// printf("----------%s---------\n",backProc[numBackProc].name );
+	backProc[numBackProc].mark=1;
+	backProc[numBackProc].pid=pid;
+	numBackProc++;
 }
 int parsePipes(char *token,int netNum)
 {
@@ -197,6 +225,10 @@ int execute_command(int num)
 			printf("memory--%s\n",memory );
 			printf("executable path--%s\n",ex_path );
 		}
+		else
+		{
+			printf("Invalid PID\n");
+		}
 		return 1;
 	}
 	else if(strcmp(pipeCommand[0][0],"history")==0)
@@ -216,6 +248,51 @@ int execute_command(int num)
 			{
 				print_top_n_lines(k,tilda);			
 			}
+		}
+		return 1;
+	}
+	else if(strcmp(pipeCommand[0][0],"jobs")==0)
+	{
+		char status[256];
+		char memory[256];
+		char ex_path[256];
+		ex_path[255]='\0';
+
+		for (int i = 0; i < numBackProc; ++i)
+		{
+			int a=pinfo(backProc[i].pid,memory,status,ex_path);
+			if(a<=0||strcmp(status,"Z")==0) continue;
+			printf("[%d] %s %s %d\n",i,status,backProc[i].name,backProc[i].pid );
+		}
+		return 1;
+	}
+	else if(strcmp(pipeCommand[0][0],"kjob")==0)
+	{
+		kill(backProc[atoi(pipeCommand[0][1])].pid,atoi(pipeCommand[0][2]));
+		return 1;
+	}
+	else if(strcmp(pipeCommand[0][0],"bg")==0)
+	{
+		kill(backProc[atoi(pipeCommand[0][1])].pid,SIGCONT);
+		return 1;
+	}
+	else if(strcmp(pipeCommand[0][0],"fg")==0)
+	{
+		waitpid(backProc[atoi(pipeCommand[0][1])].pid-1,NULL,WCONTINUED);
+		return 1;
+	}
+	else if(strcmp(pipeCommand[0][0],"overkill")==0)
+	{
+		char status[256];
+		char memory[256];
+		char ex_path[256];
+		ex_path[255]='\0';
+
+		for (int i = 0; i < numBackProc; ++i)
+		{
+			int a=pinfo(backProc[i].pid,memory,status,ex_path);
+			if(a<=0||strcmp(status,"Z")==0) continue;
+			kill(backProc[i].pid,9);
 		}
 		return 1;
 	}
@@ -309,6 +386,7 @@ void executePipe(int num_pipes)
 
 		int pid;
 		pid=fork();
+		// printf("ans=%d\n",pid );
 		if(pid<0)
 		{
 		// error
@@ -400,7 +478,6 @@ void background_process_execute(int num)
 	pipeNum[num]--;
 	int pid=fork();
 	int pid1;
-	
 	if (pid<0) 
 	{
 		// error
@@ -414,6 +491,7 @@ void background_process_execute(int num)
 	else
 	{
 		pid1=fork();
+		// printf("%d\n",pid1 );
 		if(pid1<0)
 		{
 		// error
@@ -424,7 +502,7 @@ void background_process_execute(int num)
 		}
 		else
 		{
-			//printf("%d \n",pid1 );
+			printf("%d \n",pid1 );
 			int status; 
 
 			wait(&status); 
@@ -452,11 +530,12 @@ void background_process_execute(int num)
 		}
 		exit(0);
 	}
-
+	storeCommand(num,++pid);
 }
 
-int main() 
+int main() 	
 { 
+	numBackProc=0;
 	strcpy(tilda,getPresentWorkingDirectory());
 
 	while(1)

@@ -1,20 +1,20 @@
-clear
-clear
-pwd kf
-fire
-echo asjf
-ehco alsdfj
-ls sfn
-cd skf
-clear
-clera
-./a.out &
-gcc sleep.c
-ls
-cd assignment3
+quit
 ls
 clear
-pinfo 1
+ls
+quit
 clear
-pinfo 6969
-sleep 10
+ls
+jobs
+gedit &
+jobs
+jobs
+echo hello how are you
+cat readme | grep for | wc -l
+cat readme | grep for | wc
+cat readme
+ls
+clear
+ls
+quit
+clear

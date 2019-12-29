@@ -12,7 +12,7 @@ int pinfo(int pid,char *memory,char * status,char * ex_path)
     if (fd < 0) 
     {
             // perror("r1");
-           printf("Invalid PID\n");
+           // printf("Invalid PID\n");
             return 0; 
             // exit(1); 
     }
