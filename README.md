@@ -7,8 +7,11 @@ A shell like in linux which is completely implemented in c
 ## Steps to use
 
 Step 1 Clone the repository
+
 Step 2 Move in the bash directory
+
 Step 3 $ make
+
 Step 4 $ ./make
 
 ## Commands you can run
@@ -18,17 +21,25 @@ When the background process exits then the shell must display the appropriate me
 
 ### user defined commands
 $ cd newdir
+
 $ ls [al]
+
 $ pwd 
+
 $ echo
+
 $ pinfo
+
 $ pinfo <pid>
+
 $ history <num>
   
 ### Piping and Redirection
 
 $ diff file1.txt file2.txt > output.txt
+
 $ sort < lines.txt > sortedlines.txt
+
 $ grep "new" temp.txt | cat somefile.txt | wc
 
 ### Other specific commands
